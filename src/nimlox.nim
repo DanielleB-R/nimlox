@@ -12,7 +12,8 @@ proc run(source: string) =
 proc runFile(path: string) =
   run(readFile path)
 
-  # TODO: Return non-zero status code here on error
+  if e.hadError:
+    quit(65)
 
 proc runPrompt() =
   var line: string
@@ -30,4 +31,6 @@ when isMainModule:
   case paramCount()
   of 0: runPrompt()
   of 1: runFile(paramStr(1))
-  else: echo("Usage: nimlox [script]")
+  else:
+    echo("Usage: nimlox [script]")
+    quit(64)

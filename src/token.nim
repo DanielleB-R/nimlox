@@ -47,6 +47,7 @@ type
   Token* = object
     tokenType*: TokenType
     lexeme*: string
+    # TODO: I'll need to make a discriminated union for this
     literal*: string
     line*: int
 
