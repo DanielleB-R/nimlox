@@ -83,31 +83,25 @@ proc unary(parser: var Parser): Expr =
 
   return parser.primary()
 
-proc factor(parser: var Parser): Expr =
-  var expr = parser.unary()
+template binaryOperationPair(name, successor, operator1, operator2: untyped) =
+  proc name(parser: var Parser): Expr =
+    var expr = parser.successor()
 
-  while parser.match(SLASH, STAR):
-    let
-      operator = parser.previous
-      right = parser.unary()
-    expr = Binary(left: expr, operator: operator, right: right)
+    while parser.match(operator1, operator2):
+      let
+        operator = parser.previous
+        right = parser.successor()
+      expr = Binary(left: expr, operator: operator, right: right)
 
-  expr
+    expr
 
-proc term(parser: var Parser): Expr =
-  var expr = parser.factor()
-
-  while parser.match(MINUS, PLUS):
-    let
-      operator = parser.previous
-      right = parser.factor()
-    expr = Binary(left: expr, operator: operator, right: right)
-
-  expr
+binaryOperationPair(factor, unary, SLASH, STAR)
+binaryOperationPair(term, factor, MINUS, PLUS)
 
 proc comparison(parser: var Parser): Expr =
   var expr = parser.term()
 
+  # TODO: this is awkward since I can't put variable number of operators into the template
   while parser.match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL):
     let
       operator = parser.previous
@@ -116,17 +110,7 @@ proc comparison(parser: var Parser): Expr =
 
   expr
 
-# TODO: Investigate how I can metaprogram this
-proc equality(parser: var Parser): Expr =
-  var expr = parser.comparison()
-
-  while parser.match(BANG_EQUAL, EQUAL_EQUAL):
-    let
-      operator = parser.previous
-      right = parser.comparison()
-    expr = Binary(left: expr, operator: operator, right: right)
-
-  expr
+binaryOperationPair(equality, comparison, BANG_EQUAL, EQUAL_EQUAL)
 
 proc expression(parser: var Parser): Expr =
   parser.equality()
