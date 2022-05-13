@@ -1,4 +1,4 @@
-import token, errors, strutils, tables
+import token, errors, strutils, tables, value, parseutils
 
 const keywords = [
   ("and", TokenType.AND),
@@ -28,10 +28,10 @@ type
     line: int
 
 proc newScanner*(source: string): Scanner =
-  return Scanner(source: source, tokens: @[], start: 0, current: 0, line: 1)
+  result = Scanner(source: source, tokens: @[], start: 0, current: 0, line: 1)
 
 func isAtEnd(scanner: Scanner): bool =
-  return scanner.current >= scanner.source.len
+  result = scanner.current >= scanner.source.len
 
 proc advance(scanner: var Scanner): char =
   result = scanner.source[scanner.current]
@@ -50,15 +50,15 @@ proc match(scanner: var Scanner, expected: char): bool =
   if scanner.source[scanner.current] != expected: return false
 
   inc scanner.current
-  return true
+  result = true
 
-proc addToken(scanner: var Scanner, tokenType: TokenType, literal: string) =
+proc addToken(scanner: var Scanner, tokenType: TokenType, literal: Value) =
   let text = scanner.source[scanner.start ..< scanner.current]
   scanner.tokens.add(Token(tokenType: tokenType, lexeme: text, literal: literal,
       line: scanner.line))
 
 proc addToken(scanner: var Scanner, tokenType: TokenType) =
-  scanner.addToken(tokenType, "")
+  scanner.addToken(tokenType, NullValue)
 
 proc scanString(scanner: var Scanner) =
   while scanner.peek != '"' and not scanner.isAtEnd:
@@ -72,7 +72,7 @@ proc scanString(scanner: var Scanner) =
   discard scanner.advance
 
   let value = scanner.source[scanner.start+1 ..< scanner.current-1]
-  scanner.addToken(TokenType.STRING, value)
+  scanner.addToken(TokenType.STRING, stringValue(value))
 
 proc number(scanner: var Scanner) =
   while scanner.peek in Digits: discard scanner.advance
@@ -82,9 +82,11 @@ proc number(scanner: var Scanner) =
 
     while scanner.peek in Digits: discard scanner.advance
 
-  # TODO: this will need to be a numeric type
   let value = scanner.source[scanner.start ..< scanner.current]
-  scanner.addToken(TokenType.NUMBER, value)
+  var n: float
+  # we always have a valid float value so discard error
+  discard parseFloat(value, n)
+  scanner.addToken(TokenType.NUMBER, numberValue(n))
 
 proc identifier(scanner: var Scanner) =
   while scanner.peek in IdentChars: discard scanner.advance
@@ -132,6 +134,6 @@ proc scanTokens*(scanner: var Scanner): seq[Token] =
     scanner.start = scanner.current
     scanner.scanToken
 
-  scanner.tokens.add(Token(tokenType: TokenType.EOF, lexeme: "", literal: "",
+  scanner.tokens.add(Token(tokenType: TokenType.EOF, lexeme: "", literal: NullValue,
       line: scanner.line))
   return scanner.tokens

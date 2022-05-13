@@ -1,3 +1,5 @@
+import value
+
 type
   TokenType* = enum
     LEFT_PAREN
@@ -47,9 +49,8 @@ type
   Token* = object
     tokenType*: TokenType
     lexeme*: string
-    # TODO: I'll need to make a discriminated union for this
-    literal*: string
+    literal*: Value
     line*: int
 
 proc `$`*(token: Token): string =
-  return $token.tokenType & " " & token.lexeme & " " & token.literal
+  return $token.tokenType & " " & token.lexeme & " " & $token.literal
