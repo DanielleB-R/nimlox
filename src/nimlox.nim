@@ -1,7 +1,10 @@
 import errors as e
+import interpreter
 import parser
-import printer
 import scanner
+
+var
+  terp = Interpreter()
 
 proc run(source: string) =
   var scanner = newScanner(source)
@@ -9,16 +12,16 @@ proc run(source: string) =
   var parser = newParser(tokens)
   let expression = parser.parse()
 
-  if e.hadError:
-    return
+  if e.hadError: return
 
-  echo AstPrinter().print(expression)
+  terp.interpret(expression)
 
 proc runFile(path: string) =
   run(readFile path)
 
-  if e.hadError:
-    quit(65)
+  if e.hadError: quit(65)
+  if e.hadRuntimeError: quit(70)
+
 
 proc runPrompt() =
   var line: string

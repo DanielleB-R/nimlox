@@ -1,6 +1,8 @@
 import token
 
-var hadError*: bool = false
+var
+  hadError*: bool = false
+  hadRuntimeError*: bool = false
 
 proc report(line: int, where, message: string) =
   # TODO: this should be stderr
@@ -15,3 +17,7 @@ proc error*(token: Token, message: string) =
     report(token.line, " at end", message)
   else:
     report(token.line, " at '" & token.lexeme & "'", message)
+
+proc runtimeError*(token: Token, message: string) =
+  echo(message & "\n[line " & $token.line & "]")
+  hadRuntimeError = true
