@@ -134,6 +134,6 @@ proc scanTokens*(scanner: var Scanner): seq[Token] =
     scanner.start = scanner.current
     scanner.scanToken
 
-  scanner.tokens.add(Token(tokenType: TokenType.EOF, lexeme: "", literal: NullValue,
-      line: scanner.line))
+  scanner.tokens.add(Token(tokenType: TokenType.EOF, lexeme: "",
+      literal: NullValue, line: scanner.line))
   return scanner.tokens

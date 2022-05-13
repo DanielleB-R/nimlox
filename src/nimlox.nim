@@ -1,13 +1,18 @@
 import errors as e
+import parser
+import printer
 import scanner
-import token
 
 proc run(source: string) =
   var scanner = newScanner(source)
   let tokens = scanner.scanTokens
+  var parser = newParser(tokens)
+  let expression = parser.parse()
 
-  for token in tokens:
-    echo(token)
+  if e.hadError:
+    return
+
+  echo AstPrinter().print(expression)
 
 proc runFile(path: string) =
   run(readFile path)

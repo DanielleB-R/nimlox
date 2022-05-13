@@ -7,7 +7,8 @@ type
 proc print*(printer: AstPrinter, expr: Expr): string =
   expr.accept(printer).strVal
 
-proc parenthesize(visitor: AstPrinter, name: string, exprs: varargs[Expr]): string =
+proc parenthesize(visitor: AstPrinter, name: string, exprs: varargs[
+    Expr]): string =
   "(" & name & " " & exprs.mapIt(it.accept(visitor)).join(" ") & ")"
 
 method visitBinary*(visitor: AstPrinter, expr: Binary): Value =
@@ -26,9 +27,12 @@ when isMainModule:
   let
     printer = AstPrinter()
     expression = Binary(
-      left: Unary(operator: Token(tokenType: TokenType.MINUS, lexeme: "-", literal: NullValue, line: 1), right: Literal(value: numberValue(123.0)),
+      left: Unary(operator: Token(tokenType: TokenType.MINUS, lexeme: "-",
+          literal: NullValue, line: 1), right: Literal(value: numberValue(
+          123.0)),
       ),
-      operator: Token(tokenType: TokenType.STAR, lexeme: "*", literal: NullValue, line: 1),
+      operator: Token(tokenType: TokenType.STAR, lexeme: "*",
+          literal: NullValue, line: 1),
       right: Grouping(expression: Literal(value: numberValue(45.67)))
     )
 
