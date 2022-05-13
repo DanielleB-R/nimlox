@@ -4,9 +4,9 @@ type
     vkNumber,
     vkNull,
   Value* = object
-    case kind: ValueKind
-    of vkString: strVal: string
-    of vkNumber: numberVal: float
+    case kind*: ValueKind
+    of vkString: strVal*: string
+    of vkNumber: numberVal*: float
     of vkNull: discard
 
 proc stringValue*(value: string): Value =
