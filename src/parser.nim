@@ -115,8 +115,25 @@ binaryOperationPair(equality, comparison, BANG_EQUAL, EQUAL_EQUAL)
 proc expression(parser: var Parser): Expr =
   parser.equality()
 
-proc parse*(parser: var Parser): Expr =
-  try:
-    return parser.expression()
-  except ParseError:
-    return nil
+proc printStatement(parser: var Parser): Stmt =
+  let value = parser.expression()
+  discard parser.consume(SEMICOLON, "Expect ';' after value.")
+  return PrintStmt(expression: value)
+
+proc expressionStatement(parser: var Parser): Stmt =
+  let expr = parser.expression()
+  discard parser.consume(SEMICOLON, "Expect ';' after expression.")
+  return ExpressionStmt(expression: expr)
+
+proc statement(parser: var Parser): Stmt =
+  if parser.match(PRINT): return parser.printStatement()
+
+  parser.expressionStatement()
+
+proc parse*(parser: var Parser): seq[Stmt] =
+  var statements: seq[Stmt] = @[]
+
+  while not parser.isAtEnd:
+    statements.add(parser.statement())
+
+  statements

@@ -81,9 +81,21 @@ method visitBinary(visitor: Interpreter, expr: Binary): Value =
 
   nil
 
-proc interpret*(interpreter: Interpreter, expression: Expr) =
+method visitExpressionStmt(interpreter: Interpreter, stmt: ExpressionStmt): Value =
+  discard interpreter.evaluate(stmt.expression)
+  nil
+
+method visitPrintStmt(interpreter: Interpreter, stmt: PrintStmt): Value =
+  let value = interpreter.evaluate(stmt.expression)
+  echo $value
+  nil
+
+proc execute(interpreter: Interpreter, statement: Stmt) =
+  discard statement.accept(interpreter)
+
+proc interpret*(interpreter: Interpreter, statements: seq[Stmt]) =
   try:
-    let value = interpreter.evaluate(expression)
-    echo $value
+    for statement in statements:
+      interpreter.execute(statement)
   except RuntimeError as e:
     runtimeError(e.token, e.msg)

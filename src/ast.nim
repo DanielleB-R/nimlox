@@ -2,7 +2,6 @@ import token, value
 
 type
   Expr* = ref object of RootObj
-    discard
 
   Binary* = ref object of Expr
     left*: Expr
@@ -20,10 +19,21 @@ type
     right*: Expr
 
 type
+  Stmt* = ref object of RootObj
+
+  ExpressionStmt* = ref object of Stmt
+    expression*: Expr
+
+  PrintStmt* = ref object of Stmt
+    expression*: Expr
+
+type
   Visitor* = ref object of RootObj
-    discard
 
 method accept*(expr: Expr, visitor: Visitor): Value {.base.} =
+  raise newException(CatchableError, "Method without implementation override")
+
+method accept*(stmt: Stmt, visitor: Visitor): Value {.base.} =
   raise newException(CatchableError, "Method without implementation override")
 
 template visitorMethods(typename: untyped) =
@@ -36,3 +46,5 @@ visitorMethods(Binary)
 visitorMethods(Grouping)
 visitorMethods(Literal)
 visitorMethods(Unary)
+visitorMethods(ExpressionStmt)
+visitorMethods(PrintStmt)
