@@ -81,6 +81,11 @@ method visitBinary(visitor: Interpreter, expr: Binary): Value =
 
   nil
 
+method visitAssign(interpreter: Interpreter, expr: Assign): Value =
+  let value = interpreter.evaluate(expr.value)
+  interpreter.environment.assign(expr.name, value)
+  result = value
+
 method visitExpressionStmt(interpreter: Interpreter, stmt: ExpressionStmt): Value =
   discard interpreter.evaluate(stmt.expression)
   nil

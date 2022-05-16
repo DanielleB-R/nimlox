@@ -15,3 +15,10 @@ func get*(env: Environment, name: Token): Value =
     return env.values[name.lexeme]
 
   raise newRuntimeError(name, "Undefined variable '" & name.lexeme & "'.")
+
+proc assign*(env: var Environment, name: Token, value: Value) =
+  if name.lexeme in env.values:
+    env.values[name.lexeme] = value
+    return
+
+  raise newRuntimeError(name, "Undefined variable '" & name.lexeme & "'.")

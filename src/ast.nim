@@ -3,6 +3,10 @@ import token, value
 type
   Expr* = ref object of RootObj
 
+  Assign* = ref object of Expr
+    name*: Token
+    value*: Expr
+
   Binary* = ref object of Expr
     left*: Expr
     operator*: Token
@@ -49,6 +53,7 @@ template visitorMethods(typename: untyped) =
   method accept*(expr: typename, visitor: Visitor): Value =
     visitor.`visit typename`(expr)
 
+visitorMethods(Assign)
 visitorMethods(Binary)
 visitorMethods(Grouping)
 visitorMethods(Literal)

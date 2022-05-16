@@ -115,8 +115,24 @@ proc comparison(parser: var Parser): Expr =
 
 binaryOperationPair(equality, comparison, BANG_EQUAL, EQUAL_EQUAL)
 
+proc assignment(parser: var Parser): Expr =
+  let expr = parser.equality()
+
+  if parser.match(EQUAL):
+    let
+      equals = parser.previous
+      value = parser.assignment()
+
+    if expr of Variable:
+      let name = Variable(expr).name
+      return Assign(name: name, value: value)
+
+    error(equals, "Invalid assignment target.")
+
+  result = expr
+
 proc expression(parser: var Parser): Expr =
-  parser.equality()
+  parser.assignment()
 
 proc printStatement(parser: var Parser): Stmt =
   let value = parser.expression()
