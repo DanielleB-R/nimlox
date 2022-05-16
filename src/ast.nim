@@ -28,6 +28,9 @@ type
 type
   Stmt* = ref object of RootObj
 
+  BlockStmt* = ref object of Stmt
+    statements*: seq[Stmt]
+
   ExpressionStmt* = ref object of Stmt
     expression*: Expr
 
@@ -59,6 +62,7 @@ visitorMethods(Grouping)
 visitorMethods(Literal)
 visitorMethods(Unary)
 visitorMethods(Variable)
+visitorMethods(BlockStmt)
 visitorMethods(ExpressionStmt)
 visitorMethods(PrintStmt)
 visitorMethods(VarStmt)

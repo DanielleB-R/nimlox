@@ -86,6 +86,22 @@ method visitAssign(interpreter: Interpreter, expr: Assign): Value =
   interpreter.environment.assign(expr.name, value)
   result = value
 
+proc execute(interpreter: Interpreter, statement: Stmt) =
+  discard statement.accept(interpreter)
+
+proc executeBlock(interpreter: Interpreter, statements: seq[Stmt], env: Environment) =
+  let previous = interpreter.environment
+  try:
+    interpreter.environment = env
+    for statement in statements:
+      interpreter.execute(statement)
+  finally:
+    interpreter.environment = previous
+
+method visitBlockStmt(interpreter: Interpreter, stmt: BlockStmt): Value =
+  interpreter.executeBlock(stmt.statements, newEnvironment(interpreter.environment))
+  nil
+
 method visitExpressionStmt(interpreter: Interpreter, stmt: ExpressionStmt): Value =
   discard interpreter.evaluate(stmt.expression)
   nil
@@ -102,9 +118,6 @@ method visitVarStmt(interpreter: Interpreter, stmt: VarStmt): Value =
 
   interpreter.environment.define(stmt.name.lexeme, value)
   nil
-
-proc execute(interpreter: Interpreter, statement: Stmt) =
-  discard statement.accept(interpreter)
 
 proc interpret*(interpreter: Interpreter, statements: seq[Stmt]) =
   try:

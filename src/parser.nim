@@ -57,6 +57,7 @@ proc consume(parser: var Parser, tokenType: TokenType, message: string): Token =
   raise parser.error(parser.peek, message)
 
 proc expression(parser: var Parser): Expr
+proc declaration(parser: var Parser): Stmt
 
 proc primary(parser: var Parser): Expr =
   if parser.match(FALSE): return Literal(value: FalseValue)
@@ -139,6 +140,15 @@ proc printStatement(parser: var Parser): Stmt =
   discard parser.consume(SEMICOLON, "Expect ';' after value.")
   return PrintStmt(expression: value)
 
+proc parseBlock(parser: var Parser): seq[Stmt] =
+  var statements: seq[Stmt] = @[]
+
+  while not parser.check(RIGHT_BRACE) and not parser.isAtEnd:
+    statements.add(parser.declaration())
+
+  discard parser.consume(RIGHT_BRACE, "Expect '}' after block.")
+  result = statements
+
 proc expressionStatement(parser: var Parser): Stmt =
   let expr = parser.expression()
   discard parser.consume(SEMICOLON, "Expect ';' after expression.")
@@ -146,6 +156,7 @@ proc expressionStatement(parser: var Parser): Stmt =
 
 proc statement(parser: var Parser): Stmt =
   if parser.match(PRINT): return parser.printStatement()
+  if parser.match(LEFT_BRACE): return BlockStmt(statements: parser.parseBlock())
 
   parser.expressionStatement()
 
