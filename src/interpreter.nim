@@ -1,14 +1,11 @@
-import ast, token, value, errors
+import ast, token, value, errors, environment
 
 type
   Interpreter* = ref object of Visitor
-    discard
+    environment: Environment
 
-  RuntimeError = object of CatchableError
-    token: Token
-
-proc newRuntimeError(token: Token, message: string): ref RuntimeError =
-  (ref RuntimeError)(token: token, msg: message, parent: nil)
+proc newInterpreter*(): Interpreter =
+  Interpreter(environment: newEnvironment())
 
 proc checkNumberOperand(operator: Token, operand: Value) =
   if operand.kind == vkNumber: return
@@ -38,6 +35,9 @@ method visitUnary(visitor: Interpreter, expr: Unary): Value =
   else: discard
 
   nil
+
+method visitVariable(visitor: Interpreter, expr: Variable): Value =
+  visitor.environment.get(expr.name)
 
 method visitBinary(visitor: Interpreter, expr: Binary): Value =
   let
@@ -88,6 +88,14 @@ method visitExpressionStmt(interpreter: Interpreter, stmt: ExpressionStmt): Valu
 method visitPrintStmt(interpreter: Interpreter, stmt: PrintStmt): Value =
   let value = interpreter.evaluate(stmt.expression)
   echo $value
+  nil
+
+method visitVarStmt(interpreter: Interpreter, stmt: VarStmt): Value =
+  var value = NullValue
+  if stmt.initializer != nil:
+    value = interpreter.evaluate(stmt.initializer)
+
+  interpreter.environment.define(stmt.name.lexeme, value)
   nil
 
 proc execute(interpreter: Interpreter, statement: Stmt) =

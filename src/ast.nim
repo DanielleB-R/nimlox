@@ -18,6 +18,9 @@ type
     operator*: Token
     right*: Expr
 
+  Variable* = ref object of Expr
+    name*: Token
+
 type
   Stmt* = ref object of RootObj
 
@@ -26,6 +29,10 @@ type
 
   PrintStmt* = ref object of Stmt
     expression*: Expr
+
+  VarStmt* = ref object of Stmt
+    name*: Token
+    initializer*: Expr
 
 type
   Visitor* = ref object of RootObj
@@ -46,5 +53,7 @@ visitorMethods(Binary)
 visitorMethods(Grouping)
 visitorMethods(Literal)
 visitorMethods(Unary)
+visitorMethods(Variable)
 visitorMethods(ExpressionStmt)
 visitorMethods(PrintStmt)
+visitorMethods(VarStmt)

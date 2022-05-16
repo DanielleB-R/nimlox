@@ -66,6 +66,9 @@ proc primary(parser: var Parser): Expr =
   if parser.match(NUMBER, STRING):
     return Literal(value: parser.previous.literal)
 
+  if parser.match(IDENTIFIER):
+    return Variable(name: parser.previous)
+
   if parser.match(LEFT_PAREN):
     let expr = parser.expression()
     discard parser.consume(RIGHT_PAREN, "Expect ')' after expression.")
@@ -130,10 +133,29 @@ proc statement(parser: var Parser): Stmt =
 
   parser.expressionStatement()
 
+proc varDeclaration(parser: var Parser): Stmt =
+  let name = parser.consume(IDENTIFIER, "Expect variable name.")
+
+  var initializer: Expr = nil
+  if parser.match(EQUAL):
+    initializer = parser.expression()
+
+  discard parser.consume(SEMICOLON, "Expect ';' after variable declaration")
+  return VarStmt(name: name, initializer: initializer)
+
+proc declaration(parser: var Parser): Stmt =
+  try:
+    if parser.match(VAR): return parser.varDeclaration()
+
+    return parser.statement()
+  except ParseError:
+    parser.synchronize()
+    return nil
+
 proc parse*(parser: var Parser): seq[Stmt] =
   var statements: seq[Stmt] = @[]
 
   while not parser.isAtEnd:
-    statements.add(parser.statement())
+    statements.add(parser.declaration())
 
   statements

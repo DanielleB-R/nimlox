@@ -4,7 +4,7 @@ import parser
 import scanner
 
 var
-  terp = Interpreter()
+  terp = newInterpreter()
 
 proc run(source: string) =
   var scanner = newScanner(source)

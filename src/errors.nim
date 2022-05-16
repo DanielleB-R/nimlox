@@ -4,6 +4,13 @@ var
   hadError*: bool = false
   hadRuntimeError*: bool = false
 
+type
+  RuntimeError* = object of CatchableError
+    token*: Token
+
+proc newRuntimeError*(token: Token, message: string): ref RuntimeError =
+  (ref RuntimeError)(token: token, msg: message, parent: nil)
+
 proc report(line: int, where, message: string) =
   # TODO: this should be stderr
   echo("[line " & $line & "] Error" & where & ": " & message)
