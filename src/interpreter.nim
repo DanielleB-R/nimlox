@@ -81,6 +81,18 @@ method visitBinary(visitor: Interpreter, expr: Binary): Value =
 
   nil
 
+method visitLogical(interpreter: Interpreter, expr: Logical): Value =
+  let left = interpreter.evaluate(expr.left)
+
+  if expr.operator.token_type == OR:
+    if left.isTruthy:
+      return left
+  else:
+    if not left.isTruthy:
+      return left
+
+  interpreter.evaluate(expr.right)
+
 method visitAssign(interpreter: Interpreter, expr: Assign): Value =
   let value = interpreter.evaluate(expr.value)
   interpreter.environment.assign(expr.name, value)
@@ -89,7 +101,8 @@ method visitAssign(interpreter: Interpreter, expr: Assign): Value =
 proc execute(interpreter: Interpreter, statement: Stmt) =
   discard statement.accept(interpreter)
 
-proc executeBlock(interpreter: Interpreter, statements: seq[Stmt], env: Environment) =
+proc executeBlock(interpreter: Interpreter, statements: seq[Stmt],
+    env: Environment) =
   let previous = interpreter.environment
   try:
     interpreter.environment = env
@@ -99,11 +112,21 @@ proc executeBlock(interpreter: Interpreter, statements: seq[Stmt], env: Environm
     interpreter.environment = previous
 
 method visitBlockStmt(interpreter: Interpreter, stmt: BlockStmt): Value =
-  interpreter.executeBlock(stmt.statements, newEnvironment(interpreter.environment))
+  interpreter.executeBlock(stmt.statements, newEnvironment(
+      interpreter.environment))
   nil
 
-method visitExpressionStmt(interpreter: Interpreter, stmt: ExpressionStmt): Value =
+method visitExpressionStmt(interpreter: Interpreter,
+    stmt: ExpressionStmt): Value =
   discard interpreter.evaluate(stmt.expression)
+  nil
+
+method visitIfStmt(interpreter: Interpreter, stmt: IfStmt): Value =
+  if interpreter.evaluate(stmt.condition).isTruthy:
+    interpreter.execute(stmt.thenBranch)
+  elif stmt.elseBranch != nil:
+    interpreter.execute(stmt.elseBranch)
+
   nil
 
 method visitPrintStmt(interpreter: Interpreter, stmt: PrintStmt): Value =
@@ -117,6 +140,11 @@ method visitVarStmt(interpreter: Interpreter, stmt: VarStmt): Value =
     value = interpreter.evaluate(stmt.initializer)
 
   interpreter.environment.define(stmt.name.lexeme, value)
+  nil
+
+method visitWhileStmt(interpreter: Interpreter, stmt: WhileStmt): Value =
+  while interpreter.evaluate(stmt.condition).isTruthy:
+    interpreter.execute(stmt.body)
   nil
 
 proc interpret*(interpreter: Interpreter, statements: seq[Stmt]) =
