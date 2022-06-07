@@ -12,6 +12,11 @@ type
     operator*: Token
     right*: Expr
 
+  Call* = ref object of Expr
+    callee*: Expr
+    paren*: Token
+    arguments*: seq[Expr]
+
   Grouping* = ref object of Expr
     expression*: Expr
 
@@ -38,6 +43,11 @@ type
 
   ExpressionStmt* = ref object of Stmt
     expression*: Expr
+
+  FunctionStmt* = ref object of Stmt
+    name*: Token
+    params*: seq[Token]
+    body*: seq[Stmt]
 
   IfStmt* = ref object of Stmt
     condition*: Expr
@@ -72,6 +82,7 @@ template visitorMethods(typename: untyped) =
 
 visitorMethods(Assign)
 visitorMethods(Binary)
+visitorMethods(Call)
 visitorMethods(Grouping)
 visitorMethods(Literal)
 visitorMethods(Logical)
@@ -79,6 +90,7 @@ visitorMethods(Unary)
 visitorMethods(Variable)
 visitorMethods(BlockStmt)
 visitorMethods(ExpressionStmt)
+visitorMethods(FunctionStmt)
 visitorMethods(IfStmt)
 visitorMethods(PrintStmt)
 visitorMethods(VarStmt)

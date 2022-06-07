@@ -78,6 +78,31 @@ proc primary(parser: var Parser): Expr =
 
   raise parser.error(parser.peek, "Expect expression.")
 
+proc finishCall(parser: var Parser, callee: Expr): Expr =
+  var arguments: seq[Expr] = @[]
+
+  if not parser.check(RIGHT_PAREN):
+    while true:
+      if arguments.len >= 255:
+        error(parser.peek, "Can't have more than 255 arguments")
+      arguments.add(parser.expression())
+      if not parser.match(COMMA):
+        break
+
+  let paren = parser.consume(RIGHT_PAREN, "Expect ')' after arguments.")
+
+  Call(callee: callee, paren: paren, arguments: arguments)
+
+proc call(parser: var Parser): Expr =
+  var expr = parser.primary()
+
+  while true:
+    if parser.match(LEFT_PAREN):
+      expr = parser.finishCall(expr)
+    else:
+      break
+
+  expr
 
 proc unary(parser: var Parser): Expr =
   if parser.match(BANG, MINUS):
@@ -86,7 +111,7 @@ proc unary(parser: var Parser): Expr =
       right = parser.unary()
     return Unary(operator: operator, right: right)
 
-  return parser.primary()
+  return parser.call()
 
 template binaryOperationPair(name, successor, operator1, operator2: untyped) =
   proc name(parser: var Parser): Expr =
@@ -243,6 +268,25 @@ proc statement(parser: var Parser): Stmt =
 
   parser.expressionStatement()
 
+proc functionDeclaration(parser: var Parser, kind: string): Stmt =
+  let name = parser.consume(IDENTIFIER, "Expect " & kind & " name.")
+  discard parser.consume(LEFT_PAREN, "Expect '(' after " & kind & " name.")
+
+  var parameters: seq[Token] = @[]
+  if not parser.check(RIGHT_PAREN):
+    while true:
+      if parameters.len >= 255:
+        error(parser.peek, "Can't have more than 255 parameters.")
+      parameters.add(parser.consume(IDENTIFIER, "Expect parameter name."))
+
+      if not parser.match(COMMA):
+        break
+  discard parser.consume(RIGHT_PAREN, "Expect ')' after parameters.")
+
+  discard parser.consume(LEFT_BRACE, "Expect '{' before " & kind & " body.")
+  let body = parser.parseBlock()
+  return FunctionStmt(name: name, params: parameters, body: body)
+
 proc varDeclaration(parser: var Parser): Stmt =
   let name = parser.consume(IDENTIFIER, "Expect variable name.")
 
@@ -255,6 +299,7 @@ proc varDeclaration(parser: var Parser): Stmt =
 
 proc declaration(parser: var Parser): Stmt =
   try:
+    if parser.match(FUN): return parser.functionDeclaration("function")
     if parser.match(VAR): return parser.varDeclaration()
 
     return parser.statement()

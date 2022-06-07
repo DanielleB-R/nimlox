@@ -1,11 +1,41 @@
-import ast, token, value, errors, environment
+import ast, token, value, errors, environment, sequtils, times
 
 type
   Interpreter* = ref object of Visitor
     environment: Environment
+    globals: Environment
+
+type
+  LoxFunction = ref object of Callable
+    declaration: FunctionStmt
+
+method arity(callable: LoxFunction): int =
+  callable.declaration.params.len
+
+method `$`(callable: LoxFunction): string =
+  "<fn " & callable.declaration.name.lexeme & ">"
+
+# Put the methods on Callable here to make them work lol
+method call(callable: Callable, interpreter: Interpreter, arguments: seq[Value]): Value {.base.} =
+  raise newException(CatchableError, "Method without implementation override")
+
+method call(callable: ClockCallable, interpreter: Interpreter, arguments: seq[Value]): Value =
+  Value(kind: vkNumber, numberVal: cpuTime())
+
+proc executeBlock(interpreter: Interpreter, statements: seq[Stmt],
+    env: Environment)
+
+method call(callable: LoxFunction, interpreter: Interpreter, arguments: seq[Value]): Value =
+  var environment = newEnvironment(interpreter.globals)
+  for (arg, param) in zip(arguments, callable.declaration.params):
+    environment.define(param.lexeme, arg)
+  interpreter.executeBlock(callable.declaration.body, environment)
+  result = NullValue
 
 proc newInterpreter*(): Interpreter =
-  Interpreter(environment: newEnvironment())
+  var globals = newEnvironment()
+  globals.define("clock", Value(kind: vkCallable, callableVal: ClockCallable()))
+  Interpreter(environment: globals, globals: globals)
 
 proc checkNumberOperand(operator: Token, operand: Value) =
   if operand.kind == vkNumber: return
@@ -17,6 +47,20 @@ proc checkNumberOperands(operator: Token, left: Value, right: Value) =
 
 proc evaluate(visitor: Interpreter, expr: Expr): Value =
   expr.accept(visitor)
+
+method visitCall(visitor: Interpreter, expr: Call): Value =
+  let
+    callee = visitor.evaluate(expr.callee)
+    arguments = expr.arguments.mapIt(visitor.evaluate(it))
+
+  if callee.kind != vkCallable:
+    raise newRuntimeError(expr.paren, "Can only call functions and classes.")
+
+  if arguments.len != callee.callableVal.arity:
+    raise newRuntimeError(expr.paren, "Expected " & $callee.callableVal.arity & " arguments but got " & $arguments.len & ".")
+
+  result = callee.callableVal.call(visitor, arguments)
+
 
 method visitLiteral(visitor: Interpreter, expr: Literal): Value =
   expr.value
@@ -119,6 +163,11 @@ method visitBlockStmt(interpreter: Interpreter, stmt: BlockStmt): Value =
 method visitExpressionStmt(interpreter: Interpreter,
     stmt: ExpressionStmt): Value =
   discard interpreter.evaluate(stmt.expression)
+  nil
+
+method visitFunctionStmt(interpreter: Interpreter, stmt: FunctionStmt): Value =
+  let function = LoxFunction(declaration: stmt)
+  interpreter.environment.define(stmt.name.lexeme, Value(kind: vkCallable, callableVal: function))
   nil
 
 method visitIfStmt(interpreter: Interpreter, stmt: IfStmt): Value =
