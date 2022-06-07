@@ -16,6 +16,7 @@ type
 type
   LoxFunction = ref object of Callable
     declaration: FunctionStmt
+    closure: Environment
 
 method arity(callable: LoxFunction): int =
   callable.declaration.params.len
@@ -34,7 +35,7 @@ proc executeBlock(interpreter: Interpreter, statements: seq[Stmt],
     env: Environment)
 
 method call(callable: LoxFunction, interpreter: Interpreter, arguments: seq[Value]): Value =
-  var environment = newEnvironment(interpreter.globals)
+  var environment = newEnvironment(callable.closure)
   for (arg, param) in zip(arguments, callable.declaration.params):
     environment.define(param.lexeme, arg)
   try:
@@ -177,7 +178,7 @@ method visitExpressionStmt(interpreter: Interpreter,
   nil
 
 method visitFunctionStmt(interpreter: Interpreter, stmt: FunctionStmt): Value =
-  let function = LoxFunction(declaration: stmt)
+  let function = LoxFunction(declaration: stmt, closure: environment)
   interpreter.environment.define(stmt.name.lexeme, Value(kind: vkCallable, callableVal: function))
   nil
 
