@@ -1,6 +1,14 @@
 import ast, token, value, errors, environment, sequtils, times
 
 type
+  Return* = object of CatchableError
+    value*: Value
+
+proc newReturn*(value: Value): ref Return =
+  (ref Return)(value: value, parent: nil)
+
+
+type
   Interpreter* = ref object of Visitor
     environment: Environment
     globals: Environment
@@ -29,7 +37,10 @@ method call(callable: LoxFunction, interpreter: Interpreter, arguments: seq[Valu
   var environment = newEnvironment(interpreter.globals)
   for (arg, param) in zip(arguments, callable.declaration.params):
     environment.define(param.lexeme, arg)
-  interpreter.executeBlock(callable.declaration.body, environment)
+  try:
+    interpreter.executeBlock(callable.declaration.body, environment)
+  except Return as ret:
+    return ret.value
   result = NullValue
 
 proc newInterpreter*(): Interpreter =
@@ -182,6 +193,12 @@ method visitPrintStmt(interpreter: Interpreter, stmt: PrintStmt): Value =
   let value = interpreter.evaluate(stmt.expression)
   echo $value
   nil
+
+method visitReturnStmt(interpreter: Interpreter, stmt: ReturnStmt): Value =
+  var value = NullValue
+  if stmt.value != nil: value = interpreter.evaluate(stmt.value)
+
+  raise newReturn(value)
 
 method visitVarStmt(interpreter: Interpreter, stmt: VarStmt): Value =
   var value = NullValue

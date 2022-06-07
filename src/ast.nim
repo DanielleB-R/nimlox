@@ -57,6 +57,10 @@ type
   PrintStmt* = ref object of Stmt
     expression*: Expr
 
+  ReturnStmt* = ref object of Stmt
+    keyword*: Token
+    value*: Expr
+
   VarStmt* = ref object of Stmt
     name*: Token
     initializer*: Expr
@@ -93,5 +97,6 @@ visitorMethods(ExpressionStmt)
 visitorMethods(FunctionStmt)
 visitorMethods(IfStmt)
 visitorMethods(PrintStmt)
+visitorMethods(ReturnStmt)
 visitorMethods(VarStmt)
 visitorMethods(WhileStmt)

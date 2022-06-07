@@ -259,10 +259,20 @@ proc forStatement(parser: var Parser): Stmt =
 
   result = body
 
+proc returnStatement(parser: var Parser): Stmt =
+  let keyword = parser.previous
+  var value: Expr = nil
+  if not parser.check(SEMICOLON):
+    value = parser.expression()
+
+  discard parser.consume(SEMICOLON, "Expect ';' after return value.")
+  return ReturnStmt(keyword: keyword, value: value)
+
 proc statement(parser: var Parser): Stmt =
   if parser.match(FOR): return parser.forStatement()
   if parser.match(IF): return parser.ifStatement()
   if parser.match(PRINT): return parser.printStatement()
+  if parser.match(RETURN): return parser.returnStatement()
   if parser.match(WHILE): return parser.whileStatement()
   if parser.match(LEFT_BRACE): return BlockStmt(statements: parser.parseBlock())
 
